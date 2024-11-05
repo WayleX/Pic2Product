@@ -1,5 +1,4 @@
 import random
-import gc
 
 import torch
 from controlnet_aux import ZoeDetector
@@ -12,12 +11,9 @@ from diffusers import (
     StableDiffusionXLInpaintPipeline,
 )
 
+from utils import unload_model
 from background_remove import BackgroundRemoval
 
-def unload_model(model):
-    del model
-    gc.collect()
-    torch.cuda.empty_cache()
 
 class Outpainter:
     def __init__(self):
@@ -43,6 +39,7 @@ class Outpainter:
         )
 
         self.zoe = ZoeDetector.from_pretrained("lllyasviel/Annotators")
+        self.zoe.to("cpu")
         self.background_remover = BackgroundRemoval()
 
     @staticmethod
@@ -113,16 +110,17 @@ class Outpainter:
     def outpaint(self, image: Image, prompt: str):
         self.background_remover.to_device("cuda")
         original_image = self.background_remover.remove_background(image)
-        unload_model(self.background_remover)
+        self.background_remover.to_device("cpu")
 
         resized_img, white_bg_image = self.scale_and_paste(original_image)
 
+        self.zoe.to("cuda")
         image_zoe = self.zoe(white_bg_image, detect_resolution=512, image_resolution=1024)
-        unload_model(self.zoe)
+        self.zoe.to("cpu")
 
         self.pipeline.to("cuda")
         temp_image = self._main_generate_image(prompt, "", white_bg_image, image_zoe)
-        unload_model(self.pipeline)
+        self.pipeline.to("cpu")
 
         x = (1024 - resized_img.width) // 2
         y = (1024 - resized_img.height) // 2
@@ -130,7 +128,7 @@ class Outpainter:
 
         temp_image.save("temp_image.png")
 
-        self.refiner_pipeline.enable_sequential_cpu_offload()
+        self.refiner_pipeline.enable_model_cpu_offload()
         mask_blurred = self._blurred_mask(resized_img, temp_image, x, y)
         final_image = self._refiner_generate_outpaint("item on a stone near waterfall", "", temp_image, mask_blurred)
 
