@@ -129,7 +129,7 @@ class Outpainter:
 
         self.refiner_pipeline.enable_model_cpu_offload()
         mask_blurred = self._blurred_mask(resized_img, temp_image, x, y)
-        final_image = self._refiner_generate_outpaint("item on a stone near waterfall", "", temp_image, mask_blurred)
+        final_image = self._refiner_generate_outpaint(prompt, "", temp_image, mask_blurred)
 
         final_image.paste(resized_img, (x, y), resized_img)
         return final_image

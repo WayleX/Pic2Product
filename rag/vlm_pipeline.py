@@ -20,17 +20,8 @@ class VLMPipeline(Pipeline):
         resized_image = image.resize(new_size, Image.LANCZOS)
         return resized_image
     
-    def preprocess(self, query, images, max_image_size=512):
+    def preprocess(self, query, images, max_image_size=512, system_prompt:str = ""):
         prompt_template = [
-            {
-                "role": "system",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "You are an online seller."
-                    }
-                ]
-            },
             {
                 "role": "user",
                 "content": 
@@ -42,8 +33,24 @@ class VLMPipeline(Pipeline):
             }
         ]
 
+        if system_prompt:
+            sysmessage = {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": system_prompt
+                    }
+                ]
+            }
+
+            prompt_template.insert(0, sysmessage)
+
         images = [VLMPipeline.__resize_ratio_preserve(image, max_image_size) for image in images]
         print([image.size for image in images])
+
+        if not images:
+            images = None
 
         text_prompt = self.my_processor.apply_chat_template(prompt_template, add_generation_prompt=True)
         inputs = self.my_processor(
@@ -80,6 +87,9 @@ class VLMPipeline(Pipeline):
 
         if "max_new_tokens" in kwargs:
             forward_kwargs["max_new_tokens"] = kwargs["max_new_tokens"]
+
+        if "system_prompt" in kwargs:
+            preprocessor_kwargs["system_prompt"] = kwargs["system_prompt"]
 
         return preprocessor_kwargs, forward_kwargs, {}
     

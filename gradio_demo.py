@@ -24,14 +24,24 @@ def generate_descriptions(image):
     model, processor = setup_vlm()
     vlm_pipeline = VLMPipeline(model, processor)
 
-    title = vlm_pipeline("Write item name as product label.", images=[image], max_image_size=512)
+    system_prompt = "You are an online seller."
+
+    title = vlm_pipeline("Write item name as product label.", images=[image], system_prompt=system_prompt, max_image_size=512)[0]
     print(title)
+
+    outpaint_prompt = vlm_pipeline(
+        f"Create a very short backround scene caption for the {title}. Only describe scene. Write in style: an {title} on ...",
+        system_prompt="You are a professional photographer.",
+        images=[],
+        max_image_size=512
+    )[0]
+    print(outpaint_prompt)
 
     retriever = Retriever(HuggingFaceEmbeddings(model_name='BAAI/bge-base-en-v1.5'), store_pickle="chroma_db/retriever_store.pkl")
     rag_chain = RAGChain(retriever, vlm_pipeline)
 
     query = f"Consider all images as photos of product: {title}. As a seller describe this product as detailed as you can. Use bulletpoints."
-    long_description = rag_chain(query, image=image, max_image_size=256, retrieval_limit=2)
+    long_description = rag_chain(query, image=image, system_prompt=system_prompt, max_image_size=256, retrieval_limit=2)[0]
     print(long_description)
 
     del model
@@ -44,10 +54,9 @@ def generate_descriptions(image):
     torch.cuda.empty_cache()
 
     outpainter = Outpainter()
-    outpainted_image = outpainter.outpaint(image, title)
+    outpainted_image = outpainter.outpaint(image, outpaint_prompt)
     
-    return outpainted_image, title[0], long_description[0]
-    # return outpainted_image, None, None
+    return outpainted_image, title, long_description
 
 if __name__ == "__main__":
     iface = gr.Interface(

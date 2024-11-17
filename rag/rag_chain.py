@@ -26,7 +26,7 @@ class RAGChain:
         self.retriever = retriever
         self.vlm_pipeline = vlm_pipeline
 
-    def __call__(self, query, image, max_image_size=512, retrieval_limit=6):
+    def __call__(self, query, image, max_image_size=512, retrieval_limit=6, system_prompt=""):
         docs = self.retriever(query)[:retrieval_limit]
         doc_images = [RAGChain.url_to_pil(doc) for doc in docs]
 
@@ -39,7 +39,7 @@ class RAGChain:
 
         doc_images.append(image)
 
-        return self.vlm_pipeline(query, images=doc_images, max_image_size=max_image_size)
+        return self.vlm_pipeline(query, images=doc_images, system_prompt=system_prompt, max_image_size=max_image_size)
     
 
 if __name__ == "__main__":
