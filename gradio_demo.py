@@ -1,23 +1,47 @@
-import gc
-import torch
 import gradio as gr
+from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 
-from vlm_describer import VLMDescriber
-from outpainting import Outpainter
+from rag.vlm_pipeline import VLMPipeline
+from rag.retriever import Retriever, HuggingFaceEmbeddings
+from rag.rag_chain import RAGChain
+
+from outpaint.outpainting import Outpainter
+
+from utils import unload_model
+
+def setup_vlm():
+    model = Qwen2VLForConditionalGeneration.from_pretrained(
+        "Qwen/Qwen2-VL-7B-Instruct", torch_dtype="auto", device_map="auto"
+    )
+    processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-7B-Instruct", max_pixels=512 * 512)
+
+    return model, processor
 
 def generate_descriptions(image):
-    describer = VLMDescriber()
-    short_description, long_description = describer.describe_image(image)
+    model, processor = setup_vlm()
+    vlm_pipeline = VLMPipeline(model, processor)
 
-    del describer
+    title = vlm_pipeline("Write item name as product label.", images=[image], max_image_size=512)
+    print(title)
 
-    gc.collect()
-    torch.cuda.empty_cache()
+    retriever = Retriever(HuggingFaceEmbeddings(model_name='BAAI/bge-base-en-v1.5'), store_pickle="chroma_db/retriever_store.pkl")
+    rag_chain = RAGChain(retriever, vlm_pipeline)
+
+    query = f"Consider all images as photos of product: {title}. Describe this product as detailed as you can. Use bulletpoints."
+    long_description = rag_chain(query, image=image, max_image_size=256, retrieval_limit=1)
+    print(long_description)
+
+    unload_model(model)
+    unload_model(processor)
+    unload_model(vlm_pipeline)
+    unload_model(retriever)
+    unload_model(rag_chain)
 
     outpainter = Outpainter()
-    outpainted_image = outpainter.outpaint(image, short_description)
+    outpainted_image = outpainter.outpaint(image, 'Water bottle')
     
-    return outpainted_image, short_description, long_description
+    return outpainted_image, title, long_description
+    # return outpainted_image, None, None
 
 if __name__ == "__main__":
     iface = gr.Interface(

@@ -2,4 +2,6 @@ import gc
 import torch
 
 def unload_model(model):
-    model.to("cpu")
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()

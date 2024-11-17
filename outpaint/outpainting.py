@@ -11,8 +11,7 @@ from diffusers import (
     StableDiffusionXLInpaintPipeline,
 )
 
-from utils import unload_model
-from background_remove import BackgroundRemoval
+from outpaint.background_remove import BackgroundRemoval
 
 
 class Outpainter:
