@@ -52,7 +52,7 @@ class Retriever:
         self.store.mset(list(zip(doc_ids, doc_contents)))
 
     def __call__(self, query, limit=5):
-        return self.retriever.invoke(query, limit=limit)
+        return self.retriever.invoke(query)
 
    
 if __name__ == "__main__":

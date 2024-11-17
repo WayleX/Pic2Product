@@ -11,6 +11,9 @@ from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 
 from utils import unload_model
 
+import gc
+import torch
+
 
 class RAGChain:
     @staticmethod
@@ -27,9 +30,12 @@ class RAGChain:
         docs = self.retriever(query)[:retrieval_limit]
         doc_images = [RAGChain.url_to_pil(doc) for doc in docs]
 
-        # clip = CLIPSimularity()
-        # doc_images = [doc_img for doc_img in doc_images if clip.compute_similarity(doc_img, image) > 0.5]
-        # unload_model(clip)
+        clip = CLIPSimularity()
+        doc_images = [doc_img for doc_img in doc_images if clip.compute_similarity(doc_img, image) > 0.5]
+        
+        del clip
+        gc.collect()
+        torch.cuda.empty_cache()
 
         doc_images.append(image)
 

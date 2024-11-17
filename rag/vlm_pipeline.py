@@ -23,6 +23,15 @@ class VLMPipeline(Pipeline):
     def preprocess(self, query, images, max_image_size=512):
         prompt_template = [
             {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "You are an online seller."
+                    }
+                ]
+            },
+            {
                 "role": "user",
                 "content": 
                 [
