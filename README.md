@@ -24,3 +24,4 @@ Upload your photo to **Gradio** demo:
 
 ![Screenshot from 2024-12-16 02-04-48](https://github.com/user-attachments/assets/fe5bd451-d82b-407b-8399-e55380f005c0)
 
+![Screenshot from 2024-12-16 11-34-53](https://github.com/user-attachments/assets/82db5ef2-640d-4f1c-95b0-638bb2e7cb9c)
