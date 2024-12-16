@@ -4,6 +4,7 @@ data/
 *.jpeg
 images/
 chroma_db/
+chroma_*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

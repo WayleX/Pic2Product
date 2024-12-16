@@ -58,15 +58,18 @@ class Retriever:
 if __name__ == "__main__":
     import pandas as pd
 
-    df = pd.read_csv("./data/amazon_products.csv")
+    df = pd.read_csv("./data/descriptions_dataset.csv")
     df = df.sample(40000)
-    df = df[["title", "imgUrl"]]
     df = df.dropna()
 
-    text_summaries = df["title"].tolist()
-    texts = df["imgUrl"].tolist()
+    text_summaries = df["TITLE"].tolist()
+    texts = df.drop(columns=["TITLE", "PRODUCT_ID", "PRODUCT_LENGTH", "PRODUCT_TYPE_ID"]).apply(lambda row: row.to_json(), axis=1).tolist()
 
-    retriever = Retriever(HuggingFaceEmbeddings(model_name='BAAI/bge-base-en-v1.5'), store_pickle="chroma_db/retriever_store.pkl")
+    retriever = Retriever(
+        HuggingFaceEmbeddings(model_name='BAAI/bge-base-en-v1.5'), 
+        chroma_persist_directory="./chroma_desc_db",
+        store_pickle="chroma_db/retriever_desc_store.pkl"
+    )
     retriever.add_documents(text_summaries, texts)
 
     print(retriever("water bottle", limit=3))

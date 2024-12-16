@@ -14,8 +14,7 @@ from diffusers import (
 from transformers import AutoProcessor
 from transformers import Qwen2VLForConditionalGeneration
 
-from transformers import Pipeline
-from ..rag.vlm_pipeline import VLMPipeline
+from rag.vlm_pipeline import VLMPipeline
 from outpaint.background_remove import BackgroundRemoval
 
 
@@ -137,30 +136,33 @@ class Outpainter:
         final_image = self._refiner_generate_outpaint(prompt, "", temp_image, mask_blurred)
 
         final_image.paste(resized_img, (x, y), resized_img)
-        if self.assert_quality(final_image):
-            return final_image
-        else:
-            if back <= 1:
-                return self.outpaint(image, white_bg_image, prompt, back = 1)
-            else:
-                return final_image
+
+        return final_image
+        # if self.assert_quality(final_image, white_bg_image):
+        #     return final_image
+        # else:
+        #     if back <= 1:
+        #         return self.outpaint(image, white_bg_image, prompt, back = 1)
+        #     else:
+        #         return final_image
     
     def assert_quality(self, image: Image, white_bg_image: Image):
-        model = Qwen2VLForConditionalGeneration.from_pretrained(
-        "Qwen/Qwen2-VL-7B-Instruct", torch_dtype="auto", device_map="auto"
-        )
+        model = Qwen2VLForConditionalGeneration.from_pretrained("Qwen/Qwen2-VL-7B-Instruct", torch_dtype="auto", device_map="auto")
         processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-7B-Instruct", max_pixels=512 * 512)
-
         pipeline = VLMPipeline(model, processor, max_image_size=512)
 
         query = "Given the images, say 'No' if main item has any different feature on the other image, else say 'Yes'"
-        description = pipeline(query, images=[white_bg_image, image ])
+        description = pipeline(query, images=[white_bg_image, image])
+        
         if 'yes' in description.lower():
             query = "Given the image, say 'No' if you see strange objects that are not a good fit overall, else say 'Yes'"
             description = pipeline(query, images=[image])
+
             if 'yes' in description.lower():
                 return True
+            
             return False
+        
         return False
 
 

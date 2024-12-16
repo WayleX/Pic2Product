@@ -34,6 +34,7 @@ class RAGChain:
         doc_images = [doc_img for doc_img in doc_images if clip.compute_similarity(doc_img, image) > 0.5]
         
         del clip
+        del self.retriever
         gc.collect()
         torch.cuda.empty_cache()
 

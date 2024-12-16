@@ -20,7 +20,7 @@ class VLMPipeline(Pipeline):
         resized_image = image.resize(new_size, Image.LANCZOS)
         return resized_image
     
-    def preprocess(self, query, images, max_image_size=512, system_prompt:str = ""):
+    def preprocess(self, query, images, max_image_size=512, system_prompt: str = ""):
         prompt_template = [
             {
                 "role": "user",
@@ -61,7 +61,7 @@ class VLMPipeline(Pipeline):
         return inputs
     
     def _forward(self, inputs):
-        output_ids = self.model.generate(**inputs, max_new_tokens=128)
+        output_ids = self.model.generate(**inputs, max_new_tokens=256)
         generated_ids = [
             output_ids[len(input_ids) :]
             for input_ids, output_ids in zip(inputs["input_ids"], output_ids)
