@@ -18,3 +18,7 @@ python gradio_demo.py
 
 Example usage:
 
+Upload your photo to grad io demo 
+
+![Screenshot from 2024-12-16 02-04-48](https://github.com/user-attachments/assets/fe5bd451-d82b-407b-8399-e55380f005c0)
+
